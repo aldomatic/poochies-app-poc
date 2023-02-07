@@ -1,10 +1,12 @@
 const AWS = require('aws-sdk');
 const AWSXRay = require('aws-xray-sdk-core');
 
+const ddbClient = new AWS.DynamoDB.DocumentClient();
+
 const xRay = AWSXRay.captureAWS(require('aws-sdk'));
 import { Handler } from 'aws-lambda';
 
-const table = process.env.DYNAMODB;
+const dynamoDBTable = process.env.DYNAMODB;
 const awsRegion = 'us-west-2';
 
 AWS.config.update({
@@ -16,19 +18,40 @@ export const handler: Handler = async (event, context) => {
   console.log('event 👉', event);
   
   const method = event.httpMethod;
+  let responeData;
   
-  if (event.resource === '/pets/username/{username}') {
+  if (event.resource === '/pets') {
+    const data = await getAllPets();
+    responeData = {
+        statusCode: 200,
+        body: JSON.stringify(data.Items)
+    }
+  } else if (event.resource === '/pets/username/{username}') {
       const username = event.pathParameters?.username;
       if (method === 'GET') {
-          return {
+          responeData = {
               statusCode: 200,
-              body: JSON.stringify({message: 'Successful /pets/user/{username}'}),
+              body: JSON.stringify({message: `Successful /pets/user/${username}`}),
           }
       }
   }
+  
+  return responeData
+}
 
-  return {
-    body: JSON.stringify({message: 'Successful /pets'}),
-    statusCode: 200,
-  };
+
+// list all pets
+async function getAllPets() {
+    try {
+        const params = {
+            TableName: dynamoDBTable,
+            KeyConditionExpression: 'pk = :pkValue',
+            ExpressionAttributeValues: {
+                ':pkValue': `pet#`
+            },
+        };
+        return ddbClient.query(params).promise();
+    } catch (err) {
+        return err;
+    }
 }

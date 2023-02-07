@@ -16,11 +16,11 @@ export class ProjectCdkStack extends cdk.Stack {
     const dynamodb_table = new dynamodb.Table(this, 'Table', {
       billingMode: dynamodb.BillingMode.PROVISIONED,
       partitionKey:{
-        name: 'PK#',
+        name: 'pk',
         type: dynamodb.AttributeType.STRING,
       },
       sortKey: {
-        name: 'SK#',
+        name: 'sk',
         type: dynamodb.AttributeType.STRING
       },
       readCapacity: 1,
@@ -33,7 +33,7 @@ export class ProjectCdkStack extends cdk.Stack {
     dynamodb_table.addGlobalSecondaryIndex({
       indexName: 'petBreedsIndex',
       partitionKey: {name: 'pet_breed', type: dynamodb.AttributeType.STRING},
-      sortKey: {name: 'PK#', type: dynamodb.AttributeType.STRING},
+      sortKey: {name: 'pk', type: dynamodb.AttributeType.STRING},
       readCapacity: 1,
       writeCapacity: 1,
       projectionType: dynamodb.ProjectionType.ALL,
@@ -42,7 +42,7 @@ export class ProjectCdkStack extends cdk.Stack {
     dynamodb_table.addGlobalSecondaryIndex({
       indexName: 'petOwnerIndex',
       partitionKey: {name: 'pet_owner_userid', type: dynamodb.AttributeType.STRING},
-      sortKey: {name: 'PK#', type: dynamodb.AttributeType.STRING},
+      sortKey: {name: 'pk', type: dynamodb.AttributeType.STRING},
       readCapacity: 1,
       writeCapacity: 1,
       projectionType: dynamodb.ProjectionType.ALL,

@@ -29,9 +29,10 @@ export const handler: Handler = async (event, context) => {
   } else if (event.resource === '/pets/username/{username}') {
       const username = event.pathParameters?.username;
       if (method === 'GET') {
+          const data = await getAllPetsForUser(username);
           responeData = {
               statusCode: 200,
-              body: JSON.stringify({message: `Successful /pets/user/${username}`}),
+              body: JSON.stringify(data.Items)
           }
       }
   }
@@ -49,6 +50,22 @@ async function getAllPets() {
             ExpressionAttributeValues: {
                 ':pkValue': `pet#`
             },
+        };
+        return ddbClient.query(params).promise();
+    } catch (err) {
+        return err;
+    }
+}
+// get all pets for a user
+async function getAllPetsForUser(userId:string) {
+    try {
+        const params = {
+            TableName: dynamoDBTable,
+            IndexName: 'petOwnerIndex',
+            KeyConditionExpression: 'pet_owner_userid = :userIdValue',
+            ExpressionAttributeValues: {
+                ':userIdValue': `user#${userId}`
+            }
         };
         return ddbClient.query(params).promise();
     } catch (err) {

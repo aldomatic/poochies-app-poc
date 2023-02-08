@@ -3,7 +3,7 @@ const AWSXRay = require('aws-xray-sdk-core');
 const xRay = AWSXRay.captureAWS(require('aws-sdk'));
 const awsRegion = 'us-west-2';
 
-import { getAllPets, getAllPetsForUser, getPet } from './poochDAO'
+import { getAllPets, getAllPetsForUser, getPet } from '../dynamoDataAccessLayer'
 import { Handler } from 'aws-lambda';
 
 AWS.config.update({

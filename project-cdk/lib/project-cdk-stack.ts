@@ -55,7 +55,7 @@ export class ProjectCdkStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handler',
-      entry: path.join(__dirname, `/../lambda/pooch-lambda.ts`),
+      entry: path.join(__dirname, `/../src/lambda/pooch-lambda.ts`),
       environment: {
         DYNAMODB: dynamodb_table.tableName
       }

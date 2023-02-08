@@ -1,13 +1,10 @@
 const AWS = require('aws-sdk');
 const AWSXRay = require('aws-xray-sdk-core');
-
-const ddbClient = new AWS.DynamoDB.DocumentClient();
-
 const xRay = AWSXRay.captureAWS(require('aws-sdk'));
-import { Handler } from 'aws-lambda';
-
-const dynamoDBTable = process.env.DYNAMODB;
 const awsRegion = 'us-west-2';
+
+import { getAllPets, getAllPetsForUser } from './poochDAO'
+import { Handler } from 'aws-lambda';
 
 AWS.config.update({
     region: awsRegion,
@@ -15,60 +12,25 @@ AWS.config.update({
 
 export const handler: Handler = async (event, context) => {
 
-  console.log('event 👉', event);
-  
   const method = event.httpMethod;
-  let responeData;
+  let resObject;
   
   if (event.resource === '/pets') {
     const data = await getAllPets();
-    responeData = {
+    resObject = {
         statusCode: 200,
         body: JSON.stringify(data.Items)
     }
-  } else if (event.resource === '/pets/username/{username}') {
-      const username = event.pathParameters?.username;
+  } else if (event.resource === '/pets/user/{userid}') {
+      const userid = event.pathParameters?.userid
       if (method === 'GET') {
-          const data = await getAllPetsForUser(username);
-          responeData = {
+          const data = await getAllPetsForUser(userid)
+          resObject = {
               statusCode: 200,
               body: JSON.stringify(data.Items)
           }
       }
   }
   
-  return responeData
-}
-
-
-// list all pets
-async function getAllPets() {
-    try {
-        const params = {
-            TableName: dynamoDBTable,
-            KeyConditionExpression: 'pk = :pkValue',
-            ExpressionAttributeValues: {
-                ':pkValue': `pet#`
-            },
-        };
-        return ddbClient.query(params).promise();
-    } catch (err) {
-        return err;
-    }
-}
-// get all pets for a user
-async function getAllPetsForUser(userId:string) {
-    try {
-        const params = {
-            TableName: dynamoDBTable,
-            IndexName: 'petOwnerIndex',
-            KeyConditionExpression: 'pet_owner_userid = :userIdValue',
-            ExpressionAttributeValues: {
-                ':userIdValue': `user#${userId}`
-            }
-        };
-        return ddbClient.query(params).promise();
-    } catch (err) {
-        return err;
-    }
+  return resObject
 }

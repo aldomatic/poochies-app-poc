@@ -36,7 +36,7 @@ export async function getPet(petId:string) {
 }
 
 
-// get all pets for a user`
+// get all pets for a user
 export async function getAllPetsForUser(userId:string) {
     try {
         const params = {
@@ -45,6 +45,23 @@ export async function getAllPetsForUser(userId:string) {
             KeyConditionExpression: 'pet_owner_userid = :userIdValue',
             ExpressionAttributeValues: {
                 ':userIdValue': `user#${userId}`
+            }
+        };
+        return ddbClient.query(params).promise();
+    } catch (err) {
+        return err;
+    }
+}
+
+// get all pets by breed
+export async function getAllPetsByBreed(breed:string) {
+    try {
+        const params = {
+            TableName: dynamoDBTable,
+            IndexName: 'petBreedsIndex',
+            KeyConditionExpression: 'pet_breed = :breedValue',
+            ExpressionAttributeValues: {
+                ':breedValue': breed
             }
         };
         return ddbClient.query(params).promise();

@@ -74,14 +74,21 @@ export class ProjectCdkStack extends cdk.Stack {
     
     // define endpoint and associate it with a lambda backend
     const endpoint = api.root.addResource('pets')
+    
     const petResource = endpoint
       .addResource("{petid}")
+      
+    const breedResource = endpoint
+      .addResource("breed")
+      .addResource("{breed}")
+      
     const userResource = endpoint
       .addResource("user")
       .addResource("{userid}");
       
     endpoint.addMethod('GET', new apigateway.LambdaIntegration(lambda_backend))
     petResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));
+    breedResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));
     userResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));
     
   }

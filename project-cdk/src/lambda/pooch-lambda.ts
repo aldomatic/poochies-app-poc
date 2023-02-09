@@ -3,7 +3,7 @@ const AWSXRay = require('aws-xray-sdk-core');
 const xRay = AWSXRay.captureAWS(require('aws-sdk'));
 const awsRegion = 'us-west-2';
 
-import { getAllPets, getAllPetsForUser, getPet } from '../dynamoDataAccessLayer'
+import { getAllPets, getAllPetsForUser, getPet, getAllPetsByBreed } from '../dynamoDataAccessLayer'
 import { Handler } from 'aws-lambda';
 
 AWS.config.update({
@@ -23,7 +23,7 @@ export const handler: Handler = async (event, context) => {
           body: JSON.stringify(data.Items)
       }
     }
-  } else if(event.resource === '/pets/{petid}'){
+  } else if(event.resource === '/pets/{petid}') {
     if (method === 'GET') {
       const petid = event.pathParameters?.petid
       const data = await getPet(petid);
@@ -41,6 +41,15 @@ export const handler: Handler = async (event, context) => {
               body: JSON.stringify(data.Items)
           }
       }
+  } else if(event.resource === '/pets/breed/{breed}') {
+    if (method === 'GET') {
+      const breed = event.pathParameters?.breed
+      const data = await getAllPetsByBreed(breed);
+      resObject = {
+          statusCode: 200,
+          body: JSON.stringify(data.Items)
+      }
+    }
   }
   
   return resObject

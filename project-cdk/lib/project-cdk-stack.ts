@@ -61,6 +61,15 @@ export class ProjectCdkStack extends cdk.Stack {
       }
     });
     
+    const lambda_auth_backend = new NodejsFunction(this, 'poochiesLambdaAuth', {
+      memorySize: 1024,
+      tracing: lambda.Tracing.ACTIVE,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handler',
+      entry: path.join(__dirname, `/../src/lambda/pooch-lambda-auth.ts`)
+    });
+    
     // grant lambda function read access to dynamodb table
     dynamodb_table.grantReadWriteData(lambda_backend.role!)
       
@@ -72,6 +81,11 @@ export class ProjectCdkStack extends cdk.Stack {
       }
     })
     
+    const authorizer = new apigateway.TokenAuthorizer(this, 'NewRequestAuthorizer', {
+      handler: lambda_auth_backend,
+      identitySource: 'method.request.header.Authorization',
+    });
+        
     // define endpoint and associate it with a lambda backend
     const endpoint = api.root.addResource('pets')
     
@@ -86,7 +100,9 @@ export class ProjectCdkStack extends cdk.Stack {
       .addResource("user")
       .addResource("{userid}");
       
-    endpoint.addMethod('GET', new apigateway.LambdaIntegration(lambda_backend))
+    endpoint.addMethod('GET', new apigateway.LambdaIntegration(lambda_backend), {
+      authorizer
+    })
     petResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));
     breedResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));
     userResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));

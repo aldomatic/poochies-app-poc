@@ -16,7 +16,7 @@ export const handler: Handler = async (event, context) => {
   
   let effect = 'Deny'
   
-  if (token == "youShallPass") {
+  if (token == process.env.SECRET_VALUE) {
         effect = 'Allow'
   } else {
     effect = 'Deny'
@@ -29,7 +29,7 @@ export const handler: Handler = async (event, context) => {
         {
           "Action": "execute-api:Invoke",
           "Effect": effect,
-          "Resource": event.methodArn
+          "Resource": '*'
         }
       ]
     }

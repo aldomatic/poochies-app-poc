@@ -7,10 +7,18 @@ import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as path from "path"
 import * as apigateway from 'aws-cdk-lib/aws-apigateway'
 import { PolicyStatement, Effect} from 'aws-cdk-lib/aws-iam'
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 
 export class ProjectCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+    super(scope, id, props)
+    
+    // get access to the secret object
+    const poochAPISecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'SecretFromName',
+      'poochApiKey',
+    )
 
     // define dynamodb table
     const dynamodb_table = new dynamodb.Table(this, 'Table', {
@@ -67,25 +75,32 @@ export class ProjectCdkStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handler',
-      entry: path.join(__dirname, `/../src/lambda/pooch-lambda-auth.ts`)
+      entry: path.join(__dirname, `/../src/lambda/pooch-lambda-auth.ts`),
+      environment: {
+        SECRET_NAME: poochAPISecret.secretName,
+        SECRET_VALUE: poochAPISecret.secretValue.unsafeUnwrap(),
+      }
     });
     
     // grant lambda function read access to dynamodb table
     dynamodb_table.grantReadWriteData(lambda_backend.role!)
-      
-        // define apigateway
+    
+    const authorizer = new apigateway.TokenAuthorizer(this, 'NewRequestAuthorizer', {
+      handler: lambda_auth_backend,
+      identitySource: 'method.request.header.Authorization'
+    });
+        
+    // define apigateway
     const api = new apigateway.RestApi(this, 'poochiesRestAPI', {
       deployOptions: {
         dataTraceEnabled: true,
         tracingEnabled: true
+      },
+      defaultMethodOptions: {
+        authorizer
       }
     })
     
-    const authorizer = new apigateway.TokenAuthorizer(this, 'NewRequestAuthorizer', {
-      handler: lambda_auth_backend,
-      identitySource: 'method.request.header.Authorization',
-    });
-        
     // define endpoint and associate it with a lambda backend
     const endpoint = api.root.addResource('pets')
     
@@ -100,12 +115,10 @@ export class ProjectCdkStack extends cdk.Stack {
       .addResource("user")
       .addResource("{userid}");
       
-    endpoint.addMethod('GET', new apigateway.LambdaIntegration(lambda_backend), {
-      authorizer
-    })
-    petResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));
-    breedResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));
-    userResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend));
+    endpoint.addMethod('GET', new apigateway.LambdaIntegration(lambda_backend))
+    petResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend))
+    breedResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend))
+    userResource.addMethod("GET", new apigateway.LambdaIntegration(lambda_backend))
     
   }
 }
